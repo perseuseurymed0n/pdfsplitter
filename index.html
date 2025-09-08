@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Duplex Splitter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .tool-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .tool-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .tool-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tool-icon {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .file-upload {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .file-upload:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+
+        .file-upload.dragover {
+            border-color: #28a745;
+            background: #f0fff0;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            font-size: 0.9rem;
+            color: #adb5bd;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .input-field {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .results {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #28a745;
+        }
+
+        .page-preview {
+            display: flex;
+            gap: 20px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .page-list {
+            flex: 1;
+            min-width: 200px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .page-list h4 {
+            color: #495057;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .page-numbers {
+            font-family: 'Courier New', monospace;
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        .download-link {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 20px;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .download-link:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .warning strong {
+            color: #d63031;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .instructions h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            line-height: 1.6;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .tool-section {
+                padding: 20px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 PDF Duplex Splitter</h1>
+            <p>Perfect tool for manual double-sided printing with simplex printers</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- PDF File Splitter -->
+            <div class="tool-section">
+                <div class="tool-title">
+                    <div class="tool-icon">1</div>
+                    PDF File Splitter
+                </div>
+                
+                <div class="file-upload" id="fileUpload">
+                    <input type="file" id="pdfInput" class="file-input" accept=".pdf">
+                    <div class="upload-text">📁 Click to select PDF file or drag & drop here</div>
+                    <div class="upload-hint">Supports PDF files up to 50MB</div>
+                </div>
+                
+                <button class="btn" id="splitPdfBtn" disabled>
+                    <span class="btn-text">Split PDF for Duplex Printing</span>
+                </button>
+                
+                <div id="pdfResults"></div>
+            </div>
+            
+            <!-- Manual Page Range Splitter -->
+            <div class="tool-section">
+                <div class="tool-title">
+                    <div class="tool-icon">2</div>
+                    Manual Page Range Splitter
+                </div>
+                
+                <div class="input-group">
+                    <div class="input-field">
+                        <label for="totalPages">Total Number of Pages:</label>
+                        <input type="number" id="totalPages" min="1" max="9999" placeholder="e.g., 23">
+                    </div>
+                </div>
+                
+                <button class="btn" id="splitRangeBtn">Generate Page Sequences</button>
+                
+                <div id="rangeResults"></div>
+            </div>
+            
+            <!-- Instructions -->
+            <div class="instructions">
+                <h3>🖨️ How to Use for Manual Duplex Printing:</h3>
+                <ol>
+                    <li><strong>Upload your PDF</strong> or enter the total page count</li>
+                    <li><strong>Download/Print the ODD pages</strong> first (1, 3, 5, 7...)</li>
+                    <li><strong>Take the printed stack</strong> and reinsert it into your printer tray (blank side facing the print head)</li>
+                    <li><strong>Print the EVEN pages</strong> (in reverse order: ...8, 6, 4, 2)</li>
+                    <li><strong>For odd-numbered documents:</strong> Remove the last blank page before reinserting the stack</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPdf = null;
+        
+        // File upload handling
+        const fileUpload = document.getElementById('fileUpload');
+        const pdfInput = document.getElementById('pdfInput');
+        const splitPdfBtn = document.getElementById('splitPdfBtn');
+        
+        fileUpload.addEventListener('click', () => pdfInput.click());
+        fileUpload.addEventListener('dragover', handleDragOver);
+        fileUpload.addEventListener('dragleave', handleDragLeave);
+        fileUpload.addEventListener('drop', handleDrop);
+        pdfInput.addEventListener('change', handleFileSelect);
+        splitPdfBtn.addEventListener('click', splitPdfFile);
+        
+        // Manual range splitter
+        const totalPagesInput = document.getElementById('totalPages');
+        const splitRangeBtn = document.getElementById('splitRangeBtn');
+        splitRangeBtn.addEventListener('click', splitPageRange);
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        }
+        
+        function handleDragLeave(e) {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                processFile(files[0]);
+            }
+        }
+        
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) {
+                processFile(e.target.files[0]);
+            }
+        }
+        
+        async function processFile(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                currentPdf = await PDFLib.PDFDocument.load(arrayBuffer);
+                const pageCount = currentPdf.getPageCount();
+                
+                document.querySelector('.upload-text').textContent = `📄 ${file.name} (${pageCount} pages)`;
+                splitPdfBtn.disabled = false;
+                
+                // Show preview of what will be split
+                showPdfPreview(pageCount);
+                
+            } catch (error) {
+                alert('Error loading PDF file. Please make sure it\'s a valid PDF.');
+                console.error(error);
+            }
+        }
+        
+        function showPdfPreview(totalPages) {
+            const { oddPages, evenPages } = generatePageSequences(totalPages);
+            const isOddTotal = totalPages % 2 === 1;
+            
+            let html = '<div class="results">';
+            html += '<h3>📋 Page Split Preview</h3>';
+            
+            if (isOddTotal) {
+                html += '<div class="warning">';
+                html += '<strong>⚠️ Odd number of pages detected!</strong><br>';
+                html += 'After printing odd pages, remove the last blank page before reinserting the stack.';
+                html += '</div>';
+            }
+            
+            html += '<div class="page-preview">';
+            html += '<div class="page-list">';
+            html += '<h4>🔢 Odd Pages (Print First):</h4>';
+            html += `<div class="page-numbers">${oddPages.join(', ')}</div>`;
+            html += '</div>';
+            html += '<div class="page-list">';
+            html += '<h4>🔄 Even Pages (Print Second, Reverse Order):</h4>';
+            html += `<div class="page-numbers">${evenPages.join(', ')}</div>`;
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+            
+            document.getElementById('pdfResults').innerHTML = html;
+        }
+        
+        async function splitPdfFile() {
+            if (!currentPdf) return;
+            
+            const totalPages = currentPdf.getPageCount();
+            const { oddPages, evenPages } = generatePageSequences(totalPages);
+            const isOddTotal = totalPages % 2 === 1;
+            
+            splitPdfBtn.innerHTML = '<div class="loading"></div>Splitting PDF...';
+            splitPdfBtn.disabled = true;
+            
+            try {
+                // Create odd pages PDF
+                const oddPdf = await PDFLib.PDFDocument.create();
+                for (const pageNum of oddPages) {
+                    const [page] = await oddPdf.copyPages(currentPdf, [pageNum - 1]);
+                    oddPdf.addPage(page);
+                }
+                
+                // Create even pages PDF
+                const evenPdf = await PDFLib.PDFDocument.create();
+                for (const pageNum of evenPages) {
+                    const [page] = await evenPdf.copyPages(currentPdf, [pageNum - 1]);
+                    evenPdf.addPage(page);
+                }
+                
+                // Generate download links
+                const oddPdfBytes = await oddPdf.save();
+                const evenPdfBytes = await evenPdf.save();
+                
+                const oddBlob = new Blob([oddPdfBytes], { type: 'application/pdf' });
+                const evenBlob = new Blob([evenPdfBytes], { type: 'application/pdf' });
+                
+                const oddUrl = URL.createObjectURL(oddBlob);
+                const evenUrl = URL.createObjectURL(evenBlob);
+                
+                let html = '<div class="results">';
+                html += '<h3>✅ PDF Split Complete!</h3>';
+                
+                if (isOddTotal) {
+                    html += '<div class="warning">';
+                    html += '<strong>⚠️ Important:</strong> Your document has an odd number of pages. ';
+                    html += 'After printing the odd pages, remove the last blank page before reinserting the stack.';
+                    html += '</div>';
+                }
+                
+                html += '<div class="info">';
+                html += '<strong>📋 Printing Instructions:</strong><br>';
+                html += '1. Download and print "Odd Pages" first<br>';
+                html += '2. Reinsert the printed stack (blank side facing print head)<br>';
+                html += '3. Download and print "Even Pages"<br>';
+                html += '4. Your double-sided document is ready!';
+                html += '</div>';
+                
+                html += '<div style="text-align: center; margin: 20px 0;">';
+                html += `<a href="${oddUrl}" download="odd_pages.pdf" class="download-link">📄 Download Odd Pages (${oddPages.length} pages)</a>`;
+                html += `<a href="${evenUrl}" download="even_pages.pdf" class="download-link">📄 Download Even Pages (${evenPages.length} pages)</a>`;
+                html += '</div>';
+                
+                html += '<div class="page-preview">';
+                html += '<div class="page-list">';
+                html += '<h4>🔢 Odd Pages:</h4>';
+                html += `<div class="page-numbers">${oddPages.join(', ')}</div>`;
+                html += '</div>';
+                html += '<div class="page-list">';
+                html += '<h4>🔄 Even Pages:</h4>';
+                html += `<div class="page-numbers">${evenPages.join(', ')}</div>`;
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+                
+                document.getElementById('pdfResults').innerHTML = html;
+                
+            } catch (error) {
+                alert('Error splitting PDF. Please try again.');
+                console.error(error);
+            } finally {
+                splitPdfBtn.innerHTML = '<span class="btn-text">Split PDF for Duplex Printing</span>';
+                splitPdfBtn.disabled = false;
+            }
+        }
+        
+        function splitPageRange() {
+            const totalPages = parseInt(totalPagesInput.value);
+            
+            if (!totalPages || totalPages < 1) {
+                alert('Please enter a valid number of pages (1 or greater).');
+                return;
+            }
+            
+            const { oddPages, evenPages } = generatePageSequences(totalPages);
+            const isOddTotal = totalPages % 2 === 1;
+            
+            let html = '<div class="results">';
+            html += `<h3>📋 Page Sequences for ${totalPages} Pages</h3>`;
+            
+            if (isOddTotal) {
+                html += '<div class="warning">';
+                html += '<strong>⚠️ Odd number of pages!</strong><br>';
+                html += 'After printing odd pages, remove the last blank page before reinserting the stack.';
+                html += '</div>';
+            }
+            
+            html += '<div class="info">';
+            html += '<strong>📋 Printing Order:</strong><br>';
+            html += '1. Print odd pages in normal order<br>';
+            html += '2. Reinsert printed stack (blank side facing print head)<br>';
+            html += '3. Print even pages in the reverse order shown below';
+            html += '</div>';
+            
+            html += '<div class="page-preview">';
+            html += '<div class="page-list">';
+            html += '<h4>🔢 Print First (Odd Pages):</h4>';
+            html += `<div class="page-numbers">${oddPages.join(', ')}</div>`;
+            html += '</div>';
+            html += '<div class="page-list">';
+            html += '<h4>🔄 Print Second (Even Pages, Reverse Order):</h4>';
+            html += `<div class="page-numbers">${evenPages.join(', ')}</div>`;
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+            
+            document.getElementById('rangeResults').innerHTML = html;
+            
+            // Add success animation class
+            setTimeout(() => {
+                const resultsDiv = document.querySelector('#rangeResults .results');
+                if (resultsDiv) resultsDiv.classList.add('success');
+            }, 100);
+        }
+        
+        function generatePageSequences(totalPages) {
+            const oddPages = [];
+            const evenPages = [];
+            
+            // Generate odd pages (1, 3, 5, 7, ...)
+            for (let i = 1; i <= totalPages; i += 2) {
+                oddPages.push(i);
+            }
+            
+            // Generate even pages in reverse order (..., 8, 6, 4, 2)
+            for (let i = totalPages % 2 === 0 ? totalPages : totalPages - 1; i >= 2; i -= 2) {
+                evenPages.push(i);
+            }
+            
+            return { oddPages, evenPages };
+        }
+        
+        // Add input validation
+        totalPagesInput.addEventListener('input', function() {
+            if (this.value && parseInt(this.value) > 0) {
+                splitRangeBtn.disabled = false;
+            } else {
+                splitRangeBtn.disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>
